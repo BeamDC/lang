@@ -1,22 +1,15 @@
 #include<stdlib.h>
 #include<string.h>
+#include "token.h"
 
+Token next_token(char** input) {
 
-/*
- * Example Use:
- *
- * unsigned char lut[256] = {0};
- * make_lut(lut, "hello", sizeof(lut));
- * lut['h'] == 1; // 1
- *
- */
-void make_lut(unsigned char* lut, const char* accepted_chars, size_t lut_size) {
-    // Initialize all entries to false
-    memset(lut, 0, lut_size);
+}
 
-    // Set entries for accepted characters to true
-    while (*accepted_chars) {
-        lut[(unsigned char)*accepted_chars] = 1;
-        accepted_chars++;
-    }
+Token* tokenize(char* input) {
+    // call next token until eof
+    // pass pointer by reference (char*) this will allow
+    // changes made by next_token to remain after it is called.
+    // ie. next_token(&input)
+    // it can then be dereferenced in next_token
 }

@@ -2,6 +2,9 @@
 #define LANG_LEXER_H
 
 #include<stdlib.h>
-void make_lut(const char* accepted_chars, unsigned char* lut, size_t lut_size);
+#include "token.h"
+
+Token next_token(const char* input, int pos);
+Token* tokenize(char* input);
 
 #endif

@@ -7,4 +7,7 @@ add_executable(
         lang main.c
         lexer.c
         lexer.h
+        token.c
+        token.h
+        constants.h
 )
