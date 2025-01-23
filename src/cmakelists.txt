@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.29)
-project(untitled C)
+project(lang C)
 
 set(CMAKE_C_STANDARD 11)
 
-add_executable(untitled main.c)
+add_executable(
+        lang main.c
+        lexer.c
+        lexer.h
+)
