@@ -9,5 +9,4 @@ add_executable(
         lexer.h
         token.c
         token.h
-        constants.h
 )

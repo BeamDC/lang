@@ -4,7 +4,7 @@
 #include<stdlib.h>
 #include "token.h"
 
-Token next_token(const char* input, int pos);
+Token next_token(char** input);
 Token* tokenize(char* input);
 
 #endif
