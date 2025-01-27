@@ -74,7 +74,7 @@ typedef enum {
     Error, Eof, Whitespace, Unkown,
 }TokenType;
 
-static char* to_string(TokenType t) {
+static char* token_to_string(TokenType t) {
     static char* strings[] = {
         // Single char
         "Comma",

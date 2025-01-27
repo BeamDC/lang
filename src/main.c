@@ -2,16 +2,14 @@
 #include "lexer.h"
 
 int main(void) {
-    char* test = "A<<=B+++3/(n%8);";
-    Token t;
-
-    do {
-        t = next_token(&test);
+    char* test = "3+2*1-4"; // = 3+2-4 = 5-4 = 1
+    Token* tokens = tokenize(test);
+    while (tokens->type != Eof) {
         printf("================\n");
-        printf("tok_t: %s\n", to_string(t.type));
-        printf("tok_c: \'%s\'\n", t.content);
+        printf("tok_t: %s\n", token_to_string(tokens->type));
+        printf("tok_c: \'%s\'\n", tokens->content);
         printf("================\n");
-    } while (t.type != Eof && t.type != Error);
-
+        tokens++;
+    }
     return 0;
 }

@@ -74,6 +74,16 @@ Token make_token_with_variants(char** input, const char** variants, TokenType* t
     return make_token(input, start, current_type);
 }
 
+Token make_error_token(char** input) {
+    // todo : later we will have to determine the error and display a message
+    // in addition we also need to determine where code becomes legible again
+    // for example in 8+??2-4 gives the error "??2-4", when it should be "??"
+    char* start = *input;
+    while(!is_whitespace(**input)) { (*input)++; }
+    Token tok = make_token(input, start, Error);
+    return tok;
+}
+
 Token make_numeric(char** input) {
     char* start = *input;
     // todo : allow for float values
@@ -272,8 +282,11 @@ Token next_token(char** input) {
         case '@':
             tok = make_token_single_char(input, At);
             break;
-        default: // todo : have a way to display cause of error
-            tok = make_token_single_char(input, Error);
+        case '\0':
+            tok = make_token_single_char(input, Eof);
+            break;
+        default:
+            tok = make_error_token(input);
             break;
     }
 
@@ -286,9 +299,17 @@ Token* tokenize(char* input) {
     // changes made by next_token to remain after it is called.
     // ie. next_token(&input)
     // it can then be dereferenced in next_token
-    // Token t = next_token(&input);
-    // while (t.type != Eof) {
-    //     // find a way to put these into a pointer
-    //     t = next_token(&input);
-    // }
+    size_t used = 0;
+    size_t size = 1;
+    Token* tokens = malloc(sizeof(Token));
+    Token current;
+    do {
+        if (used == size) {
+            size *= 2;
+            tokens = realloc(tokens, size * sizeof(Token));
+        }
+        current = next_token(&input);
+        tokens[used++] = current;
+    } while (current.type != Eof);
+    return tokens;
 }
