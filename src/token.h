@@ -3,7 +3,7 @@
 
 #include<stdbool.h>
 
-enum TokenType {
+typedef enum {
     // Single char
     Comma,
     Colon,
@@ -72,9 +72,9 @@ enum TokenType {
     // Misc
     Arrow,
     Error, Eof, Whitespace, Unkown,
-};
+}TokenType;
 
-static char* to_string(enum TokenType t) {
+static char* to_string(TokenType t) {
     static char* strings[] = {
         // Single char
         "Comma",
@@ -163,7 +163,7 @@ static bool is_kword(char* s) {
 
 // structs
 typedef struct {
-    enum TokenType type;
+    TokenType type;
     char* content;
 } Token;
 
