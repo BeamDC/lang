@@ -286,6 +286,7 @@ Token next_token(char** input) {
             tok = make_token_single_char(input, Eof);
             break;
         default:
+            // unexpected char error
             tok = make_error_token(input);
             break;
     }
@@ -294,11 +295,6 @@ Token next_token(char** input) {
 }
 
 Token* tokenize(char* input) {
-    // call next token until eof
-    // pass pointer by reference (char**) this will allow
-    // changes made by next_token to remain after it is called.
-    // ie. next_token(&input)
-    // it can then be dereferenced in next_token
     size_t used = 0;
     size_t size = 1;
     Token* tokens = malloc(sizeof(Token));

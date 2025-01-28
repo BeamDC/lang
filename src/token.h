@@ -172,7 +172,4 @@ typedef struct {
     int operands;
 } Operator;
 
-// functions
-Token make_whitespace(char** input);
-
 #endif
