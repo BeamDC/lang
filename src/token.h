@@ -2,6 +2,8 @@
 #define LANG_TOKEN_H
 
 #include<stdbool.h>
+#include <stddef.h>
+
 
 typedef enum {
     // Single char
@@ -161,11 +163,15 @@ static bool is_kword(char* s) {
     };
 }
 
-// structs
 typedef struct {
     TokenType type;
     char* content;
 } Token;
+
+typedef struct {
+    Token* tokens;
+    size_t len;
+} TokenList;
 
 typedef struct {
     int precedence;

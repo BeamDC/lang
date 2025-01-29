@@ -2,14 +2,16 @@
 #include "lexer.h"
 
 int main(void) {
-    char* test = "3+2*1-4"; // = 3+2-4 = 5-4 = 1
-    Token* tokens = tokenize(test);
-    while (tokens->type != Eof) {
+    char* test = "1+2 ?im a comment\nHello";
+    printf("src: %s\n", test);
+    TokenList tokens = tokenize(test);
+    printf("%llu tokens in total\n",tokens.len);
+    Token* toks = tokens.tokens;
+    for (int i = 0; i < tokens.len; ++i) {
         printf("================\n");
-        printf("tok_t: %s\n", token_to_string(tokens->type));
-        printf("tok_c: \'%s\'\n", tokens->content);
+        printf("tok_t: %s\n", token_to_string(toks[i].type));
+        printf("tok_c: \'%s\'\n", toks[i].content);
         printf("================\n");
-        tokens++;
     }
     return 0;
 }

@@ -5,6 +5,6 @@
 #include "token.h"
 
 Token next_token(char** input);
-Token* tokenize(char* input);
+TokenList tokenize(char* input);
 
 #endif

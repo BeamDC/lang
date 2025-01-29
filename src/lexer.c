@@ -1,6 +1,7 @@
 #include<stdlib.h>
 #include "token.h"
 #include <stdbool.h>
+#include <stdio.h>
 #include <string.h>
 
 // todo : potentially a better way to do this
@@ -41,10 +42,10 @@ Token make_token(char** input, const char* start, TokenType type) {
     Token tok;
     tok.type = type;
 
-    size_t length = *input - start;
-    tok.content = (char*)malloc(length + 1);
-    strncpy(tok.content, start, length);
-    tok.content[length] = '\0';
+    size_t len = *input - start;
+    tok.content = (char*)malloc(len + 1);
+    strncpy(tok.content, start, len);
+    tok.content[len] = '\0';
 
     return tok;
 }
@@ -74,14 +75,13 @@ Token make_token_with_variants(char** input, const char** variants, TokenType* t
     return make_token(input, start, current_type);
 }
 
-Token make_error_token(char** input) {
+Token make_error_token(char** input, char* message) {
     // todo : later we will have to determine the error and display a message
     // in addition we also need to determine where code becomes legible again
     // for example in 8+??2-4 gives the error "??2-4", when it should be "??"
     char* start = *input;
-    while(!is_whitespace(**input)) { (*input)++; }
-    Token tok = make_token(input, start, Error);
-    return tok;
+    while(!is_whitespace(**input) && **input!='\0') { (*input)++; }
+    return make_token(input, start, Error);
 }
 
 Token make_numeric(char** input) {
@@ -100,7 +100,6 @@ Token make_ident(char** input) {
     return tok;
 }
 
-// gets the longest string of whitespace from current pos
 Token make_whitespace(char** input) {
     char* start = *input;
     while(is_whitespace(**input)) { (*input)++; }
@@ -108,7 +107,13 @@ Token make_whitespace(char** input) {
     return tok;
 }
 
-Token make_operator(char**input) {
+Token make_comment(char** input) {
+    char * start = *input;
+    while(**input != '\n') { (*input)++; }
+    return make_token(input, start, Comment);
+}
+
+Token make_operator(char** input) {
     Token tok;
     switch (**input) {
         case '.':
@@ -230,6 +235,22 @@ Token make_operator(char**input) {
     return tok;
 }
 
+Token make_string(char** input) {
+    // consume first "
+    (*input)++;
+    char* start = *input;
+    while(**input != '"' && **input != '\0') {
+        (*input)++;
+    }
+    if (**input == '\0') {
+        return make_error_token(&start, "Unterminated String");
+    }
+    Token tok = make_token(input, start, String);
+    // move forward to full consume string
+    (*input)++;
+    return tok;
+}
+
 Token next_token(char** input) {
     if (is_digit(**input)) { return make_numeric(input); }
     if (is_alpha(**input)) { return make_ident(input);   }
@@ -237,12 +258,6 @@ Token next_token(char** input) {
     if (is_operator(**input)) { return make_operator(input); }
 
     Token tok;
-
-    // string
-
-    // char
-
-    // comment
 
     // single char
     switch (**input) {
@@ -282,30 +297,39 @@ Token next_token(char** input) {
         case '@':
             tok = make_token_single_char(input, At);
             break;
+        case '"':
+            tok = make_string(input);
+            break;
+        case '?':
+            tok = make_comment(input);
+            break;
         case '\0':
             tok = make_token_single_char(input, Eof);
             break;
         default:
             // unexpected char error
-            tok = make_error_token(input);
+            tok = make_error_token(input, "Unexpected Char");
             break;
     }
 
     return tok;
 }
 
-Token* tokenize(char* input) {
+TokenList tokenize(char* input) {
     size_t used = 0;
     size_t size = 1;
-    Token* tokens = malloc(sizeof(Token));
+    TokenList toks;
+    toks.tokens = malloc(sizeof(Token));
+    toks.len = 0;
     Token current;
     do {
         if (used == size) {
             size *= 2;
-            tokens = realloc(tokens, size * sizeof(Token));
+            toks.tokens = realloc(toks.tokens, size * sizeof(Token));
         }
         current = next_token(&input);
-        tokens[used++] = current;
+        toks.tokens[used++] = current;
     } while (current.type != Eof);
-    return tokens;
+    toks.len = used;
+    return toks;
 }
