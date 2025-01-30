@@ -319,16 +319,16 @@ TokenList tokenize(char* input) {
     size_t used = 0;
     size_t size = 1;
     TokenList toks;
-    toks.tokens = malloc(sizeof(Token));
+    toks.current = malloc(sizeof(Token));
     toks.len = 0;
     Token current;
     do {
         if (used == size) {
             size *= 2;
-            toks.tokens = realloc(toks.tokens, size * sizeof(Token));
+            toks.current = realloc(toks.current, size * sizeof(Token));
         }
         current = next_token(&input);
-        toks.tokens[used++] = current;
+        toks.current[used++] = current;
     } while (current.type != Eof);
     toks.len = used;
     return toks;

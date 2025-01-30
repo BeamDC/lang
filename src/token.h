@@ -163,13 +163,15 @@ static bool is_kword(char* s) {
     };
 }
 
+// todo : add row and column data for error handling
 typedef struct {
     TokenType type;
     char* content;
 } Token;
 
+// todo : maybe change name to lexer, and put in lexer.h
 typedef struct {
-    Token* tokens;
+    Token* current;
     size_t len;
 } TokenList;
 
