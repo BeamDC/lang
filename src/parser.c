@@ -1,117 +1,72 @@
 #include "parser.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+void advance_parer(Parser* parser) {
+    parser->tokens.current++;
+}
 
 void skip_whitespace(Parser* parser) {
-    while(parser->tokens.current->type == Whitespace) {
-        parser->tokens.current++;
+    while (parser->tokens.current->type == Whitespace) {
+        advance_parer(parser);
     }
 }
 
-double factor(Parser* parser) {
+AstNode* factor(Parser* parser) {
     skip_whitespace(parser);
 
     if (parser->tokens.current->type == Numeric) {
-        // currently we only support ints, will expand later
         double value = atoi(parser->tokens.current->content);
-        parser->tokens.current++;
-        return value;
+        advance_parer(parser);
+        return node_numeric(value);
     }
 
     if (parser->tokens.current->type == Lparen) {
-        parser->tokens.current++;
-        double value = expr(parser);
-        skip_whitespace(parser);
+        advance_parer(parser);
+        AstNode* expression = expr(parser);
+
         if (parser->tokens.current->type == Rparen) {
-            parser->tokens.current++;
-            return value;
+            advance_parer(parser);
+            return expression;
         }
-        fprintf(stderr, "Error : No Closing Parenthesis");
-        return -1; // current exit code for error
+        // Error, no closing paren
     }
-    fprintf(stderr, "Error : Unexpected Char");
-    return -1; // current exit code for error
+    // Error, unexpected char
 }
 
-double term(Parser* parser) {
-    double value = factor(parser);
-
-    for(;;) {
-        skip_whitespace(parser);
-        TokenType op = parser->tokens.current->type;
-
-        if (op != Mul && op != Div) {
-            break;
-        }
-
-        parser->tokens.current++;
-        double fact = factor(parser);
-
-        // make functions to handle the math later (want to do it from scratch lol)
-        switch (op) {
-            case Mul:
-                value *= fact;
-                break;
-            case Div:
-                if (fact == 0) {
-                    fprintf(stderr, "Error : Division by Zero");
-                    fact = 1;
-                }
-                value /= fact;
-                break;
-            default:
-                break;
-        }
-    }
-    return value;
-}
-
-double expr(Parser* parser) {
-    double value = term(parser);
-
-    for(;;) {
-        skip_whitespace(parser);
-        TokenType op = parser->tokens.current->type;
-
-        if (op != Add && op != Sub) {
-            break;
-        }
-
-        parser->tokens.current++;
-        double trm = term(parser);
-
-        // make functions to handle the math later (want to do it from scratch lol)
-        switch (op) {
-            case Add:
-                value += trm;
-                break;
-            case Sub:
-            value -= trm;
-                break;
-            default:
-                break;
-        }
-    }
-
-    return value;
-}
-
-double parse(Parser* parser) {
-    double result = expr(parser);
+AstNode* term(Parser* parser) {
+    AstNode* left = factor(parser);
     skip_whitespace(parser);
 
-    if (parser->tokens.current->type != Eof) {
-        fprintf(
-            stderr,
-            "Error : Unexpected content at end of expr '%s' with value '%s'",
-            token_to_string(parser->tokens.current->type),
-            parser->tokens.current->content
-            );
-        parser->error_occurred = true;
-        result = -1;
+    while (parser->tokens.current->type == Mul || parser->tokens.current->type == Div) {
+        TokenType op = parser->tokens.current->type;
+        advance_parer(parser);
+        AstNode* right = factor(parser);
+        left = node_binary(op, left, right);
+        skip_whitespace(parser);
     }
 
-    return result;
+    return left;
+}
+
+AstNode* expr(Parser* parser) {
+    AstNode* left = term(parser);
+    skip_whitespace(parser);
+
+    while (parser->tokens.current->type == Add || parser->tokens.current->type == Sub) {
+        TokenType op = parser->tokens.current->type;
+        advance_parer(parser);
+        AstNode* right = term(parser);
+        left = node_binary(op, left, right);
+        skip_whitespace(parser);
+    }
+
+    return left;
+}
+
+Parser parse(TokenList tokens) {
+    Parser parser;
+    parser.code = 0;
+    parser.tokens = tokens;
+    // expr (or some future equivalent) will return the full tree.
+    parser.ast = expr(&parser);
+    return parser;
 }

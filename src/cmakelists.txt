@@ -8,4 +8,5 @@ add_executable(
         lexer.c
         token.c
         parser.c
+        ast.c
 )
