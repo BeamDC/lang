@@ -1,13 +1,16 @@
-#include <stdio.h>
 #include "lexer.h"
+#include <stdio.h>
 #include "parser.h"
 #include "ast.h"
+#include "file_io.h"
 
 int main(void) {
-    char* test = "1+2*3-4";
-    TokenList tokens = tokenize(test);
+    StringView buf = file_read("../test_code.txt");
+    TokenList tokens = tokenize(buf.string);
     Parser parser = parse(tokens);
-    printf("src: %s\n", test);
+
+    printf("src:\n%s\n\n", buf.string);
     print_ast(parser.ast, 0);
+
     return 0;
 }

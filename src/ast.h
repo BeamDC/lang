@@ -1,6 +1,7 @@
 #ifndef AST_H
 #define AST_H
 
+#include <stdio.h>
 #include "token.h"
 
 typedef enum {
@@ -14,16 +15,29 @@ typedef enum {
     Node_While,
     Node_Function,
     Node_Call,
-    Node_Return
+    Node_Return,
+    Node_Program_Root
 } NodeType;
 
-typedef struct {
+
+typedef struct AstNode{
     NodeType type;
     // Token token; // the token that matches to this node
 
     union {
         double number;
         char* Ident_or_String;
+
+        struct {
+            struct AstNode** items;
+            size_t size;
+            size_t used;
+        }root;
+
+        struct {
+            char* variable;
+            struct AstNode* value;
+        }assignment;
 
         struct {
             struct AstNode* operand;
@@ -47,14 +61,18 @@ typedef struct {
             int param_count;
             struct AstNode** params;
             struct AstNode* body;
-        };
+        }function;
     } data;
 } AstNode;
 
 void print_ast(AstNode* node, int depth);
 
 AstNode* new_node(NodeType type);
+AstNode* node_root();
 AstNode* node_numeric(double value);
+AstNode* node_ident(char* name);
 AstNode* node_binary(TokenType op, AstNode* left, AstNode* right);
 AstNode* node_unary(TokenType op, AstNode* operand);
+AstNode* node_assignment(char* var_name, AstNode* value);
+AstNode* node_if_statement(AstNode* condition, AstNode* body, AstNode* else_body);
 #endif //AST_H

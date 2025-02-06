@@ -4,6 +4,10 @@
 #include <stdio.h>
 #include <string.h>
 
+// tracking lexer pos
+size_t line = 1;
+size_t col = 1;
+
 // todo : potentially a better way to do this
 bool is_in_str(const char c, const char* str) {
     int chars[256] = {0};
@@ -33,7 +37,7 @@ bool is_ident_char(char c) {
 }
 
 bool is_operator(char c) {
-    return is_in_str(c, ".+-*/%<>&|^!=");
+    return is_in_str(c, ".+-*/%<>&|^!=~");
 }
 
 // make a token of specified type
@@ -46,6 +50,10 @@ Token make_token(char** input, const char* start, TokenType type) {
     tok.content = (char*)malloc(len + 1);
     strncpy(tok.content, start, len);
     tok.content[len] = '\0';
+    tok.line = line;
+    tok.col = col;
+
+    col += len;
 
     return tok;
 }
@@ -56,7 +64,8 @@ Token make_token_single_char(char** input, TokenType type) {
     return make_token(input, start, type);
 }
 
-Token make_token_with_variants(char** input, const char** variants, TokenType* types, TokenType otherwise) {
+Token make_token_with_variants(char** input, const char** variants, TokenType* types, TokenType otherwise)
+{
     // given a list of possible variants,
     // find the longest variant token that can be made with input,
     // if no matches are found, create a token with the otherwise type
@@ -96,13 +105,20 @@ Token make_ident(char** input) {
     char* start = *input;
     // todo : allow checking for keywords
     while(is_ident_char(**input)) { (*input)++; }
-    Token tok = make_token(input, start, Ident);
+    TokenType type = get_ident_or_keyword(input, start);
+    Token tok = make_token(input, start, type);
     return tok;
 }
 
 Token make_whitespace(char** input) {
     char* start = *input;
-    while(is_whitespace(**input)) { (*input)++; }
+    while(is_whitespace(**input)) {
+        if (**input == '\n') {
+            line++;
+            col = 0;
+        }
+        (*input)++;
+    }
     Token tok = make_token(input, start, Whitespace);
     return tok;
 }
@@ -127,16 +143,16 @@ Token make_operator(char** input) {
         case '+':
             tok = make_token_with_variants(
                     input,
-                    (const char*[]) { "++", "+=", NULL },
-                    (TokenType[]) { Inc, CompAdd },
+                    (const char*[]) { "+=", NULL },
+                    (TokenType[]) { CompAdd },
                     Add
             );
             break;
         case '-':
             tok = make_token_with_variants(
                     input,
-                    (const char*[]) { "--", "-=", NULL},
-                    (TokenType[]) { Dec, CompSub },
+                    (const char*[]) { "-=", NULL},
+                    (TokenType[]) { CompSub },
                     Sub
                     );
             break;
@@ -252,10 +268,10 @@ Token make_string(char** input) {
 }
 
 Token next_token(char** input) {
+    if (is_alpha(**input)) { return make_ident(input); }
     if (is_digit(**input)) { return make_numeric(input); }
-    if (is_alpha(**input)) { return make_ident(input);   }
-    if (is_whitespace(**input)) { return make_whitespace(input); }
     if (is_operator(**input)) { return make_operator(input); }
+    if (is_whitespace(**input)) { return make_whitespace(input); }
 
     Token tok;
 
@@ -316,20 +332,18 @@ Token next_token(char** input) {
 }
 
 TokenList tokenize(char* input) {
-    size_t used = 0;
     size_t size = 1;
     TokenList toks;
     toks.current = malloc(sizeof(Token));
     toks.len = 0;
     Token current;
     do {
-        if (used == size) {
+        if (toks.len == size) {
             size *= 2;
             toks.current = realloc(toks.current, size * sizeof(Token));
         }
         current = next_token(&input);
-        toks.current[used++] = current;
+        toks.current[toks.len++] = current;
     } while (current.type != Eof);
-    toks.len = used;
     return toks;
 }

@@ -9,4 +9,5 @@ add_executable(
         token.c
         parser.c
         ast.c
+        file_io.c
 )
