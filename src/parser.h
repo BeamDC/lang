@@ -21,7 +21,7 @@ typedef struct {
     TokenList tokens;
     AstNode* ast;
     size_t code;
-    Result result;
+    // Result result;
 } Parser;
 ///////////////////////////
 AstNode* statement(Parser* parser);

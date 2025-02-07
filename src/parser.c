@@ -127,9 +127,11 @@ AstNode* if_statement(Parser* parser) {
     // for now conditions will be very specific,
     // in the future we will allow for more complex conditionals
     consume_token(parser, Lparen);
+    // todo : allow for more general expressions
     Token* left = consume_token(parser, Ident);
     Token* op = consume_token(parser, Eq);
     Token* right = consume_token(parser, Numeric);
+
     consume_token(parser, Rparen);
 
     AstNode* condition = node_binary(op->type, node_ident(left->content), node_numeric(atof(right->content)));
@@ -152,6 +154,32 @@ AstNode* let_statement(Parser* parser) {
     return node_assignment(ident->content, expression);
 }
 
+AstNode* function(Parser* parser) {
+    consume_token(parser, Fn);
+    Token* name = consume_token(parser, Ident);
+    consume_token(parser, Lparen);
+    // consume parameters for now
+    AstNode** params = malloc(sizeof(AstNode*));
+    size_t max_params = 1;
+    size_t total_params = 0;
+    while (peek(parser) != Rparen) {
+        // todo : add types for params later
+        Token* param = consume_token(parser, Ident);
+        if (total_params == max_params) {
+            max_params *= 2;
+            params = realloc(params, sizeof(AstNode*) * max_params);
+        }
+        params[total_params++] = node_ident(param->content);
+        if (peek(parser) == Rparen) { break; }
+        consume_token(parser, Comma);
+    }
+    if (!total_params) { params = NULL; }
+    consume_token(parser, Rparen);
+    AstNode* body = scope(parser);
+    AstNode* func = node_function(name->content, false, total_params, params, body);
+    return func;
+}
+
 AstNode* statement(Parser* parser) {
     skip_whitespace(parser);
     switch (parser->tokens.current->type) {
@@ -159,12 +187,16 @@ AstNode* statement(Parser* parser) {
             return if_statement(parser);
         case Let:
             return let_statement(parser);
+        case Fn:
+            return function(parser);
         default:
             return expr(parser);
     }
     /// fails when called at EOF
 }
 
+// we possibly want to build out from a given node
+// then this can be called to allow scope to process multiple lines
 AstNode* build_tree(Parser* parser) {
     AstNode* root = node_root();
     while (parser->tokens.current->type != Eof) {
