@@ -53,8 +53,10 @@ typedef struct AstNode{
 
         struct {
             struct AstNode* condition;
-            struct AstNode* body;
-            struct AstNode* else_body;
+            struct AstNode** body;
+            struct AstNode** else_body;
+            size_t then_size;
+            size_t else_size;
         }if_statement;
 
         struct {
@@ -62,12 +64,13 @@ typedef struct AstNode{
             bool public;
             int param_count;
             struct AstNode** params;
-            struct AstNode* body;
+            struct AstNode** body;
+            size_t body_size;
         }function;
     } data;
 } AstNode;
 
-void print_ast(AstNode* node, int depth);
+void print_ast(AstNode* node, size_t depth);
 
 AstNode* new_node(NodeType type);
 AstNode* node_root();
@@ -76,6 +79,6 @@ AstNode* node_ident(char* name);
 AstNode* node_binary(TokenType op, AstNode* left, AstNode* right);
 AstNode* node_unary(TokenType op, AstNode* operand);
 AstNode* node_assignment(char* var_name, AstNode* value);
-AstNode* node_if_statement(AstNode* condition, AstNode* body, AstNode* else_body);
-AstNode* node_function(char* name, bool public, int param_count, AstNode** params, AstNode* body);
+AstNode* node_if_statement(AstNode* condition, AstNode** body, AstNode** else_body);
+AstNode* node_function(char* name, bool public, int param_count, AstNode** params, AstNode** body);
 #endif //AST_H

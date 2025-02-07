@@ -28,7 +28,7 @@ AstNode* statement(Parser* parser);
 AstNode* expr(Parser* parser);
 AstNode* term(Parser* parser);
 AstNode* factor(Parser* parser);
-AstNode* scope(Parser* parser);
+AstNode** scope(Parser* parser);
 AstNode* if_statement(Parser* parser);
 AstNode* let_statement(Parser* parser);
 Parser parse(TokenList tokens);

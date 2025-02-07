@@ -52,7 +52,7 @@ AstNode* node_assignment(char* var_name, AstNode* value) {
     return node;
 }
 
-AstNode* node_if_statement(AstNode* condition, AstNode* body, AstNode* else_body) {
+AstNode* node_if_statement(AstNode* condition, AstNode** body, AstNode** else_body) {
     AstNode* node = new_node(Node_If);
     node->data.if_statement.condition = condition;
     node->data.if_statement.body = body;
@@ -60,7 +60,7 @@ AstNode* node_if_statement(AstNode* condition, AstNode* body, AstNode* else_body
     return node;
 }
 
-AstNode* node_function(char* name, bool public, int param_count, AstNode** params, AstNode* body) {
+AstNode* node_function(char* name, bool public, int param_count, AstNode** params, AstNode** body) {
     AstNode* node = new_node(Node_Function);
     node->data.function.name = name;
     node->data.function.public = public;
@@ -88,7 +88,50 @@ char* node_type_to_str(NodeType type) {
     return strings[type];
 }
 
-void print_ast(AstNode* node, int depth) {
+void print_scope(AstNode** scope, size_t depth) {
+    AstNode** current = scope;
+    while (*current) {
+        print_ast(*current, depth);
+        current++;
+    }
+}
+
+void print_if(AstNode* node, size_t depth) {
+    printf("If: \n");
+    print_ast(node->data.if_statement.condition, depth);
+    for (int i = 0; i < depth; i++) { printf("  "); }
+    printf("Then: \n");
+    print_scope(node->data.if_statement.body, depth + 1);
+
+    if (node->data.if_statement.else_body) {
+        for (int i = 0; i < depth; i++) { printf("  "); }
+        printf("Else: \n");
+        print_scope(node->data.if_statement.else_body, depth + 1);
+    }
+}
+
+void print_function(AstNode* node, size_t depth) {
+    printf("Function: %s\n", node->data.function.name);
+    for (int i = 0; i < depth; i++) { printf("  "); }
+    printf("Visibility -> ");
+    if (node->data.function.public) {
+        printf("Public\n");
+    } else {
+        printf("Private\n");
+    }
+    if (node->data.function.param_count) {
+        for (int i = 0; i < depth; i++) { printf("  "); }
+        printf("Params:\n");
+        for (size_t i = 0; i < node->data.function.param_count; ++i) {
+            print_ast(node->data.function.params[i], depth + 1);
+        }
+    }
+    for (int i = 0; i < depth; i++) { printf("  "); }
+    printf("Body:\n");
+    print_scope(node->data.function.body, depth + 1);
+}
+
+void print_ast(AstNode* node, size_t depth) {
     for (int i = 0; i < depth; i++) { printf("  "); }
 
     switch (node->type) {
@@ -118,36 +161,10 @@ void print_ast(AstNode* node, int depth) {
             print_ast(node->data.assignment.value, depth + 1);
             break;
         case Node_If:
-            printf("If: \n");
-            print_ast(node->data.if_statement.condition, depth + 1);
-            for (int i = 0; i < depth + 1; i++) { printf("  "); }
-            printf("Then: \n");
-            print_ast(node->data.if_statement.body, depth + 2);
-            if (node->data.if_statement.else_body) {
-                for (int i = 0; i < depth + 1; i++) { printf("  "); }
-                printf("Else: \n");
-                print_ast(node->data.if_statement.else_body, depth + 2);
-            }
+            print_if(node, depth + 1);
             break;
         case Node_Function:
-                printf("Function: %s\n", node->data.function.name);
-                for (int i = 0; i < depth + 1; i++) { printf("  "); }
-                printf("Visibility -> ");
-                if (node->data.function.public) {
-                    printf("Public\n");
-                } else {
-                    printf("Private\n");
-                }
-                if (node->data.function.param_count) {
-                    for (int i = 0; i < depth + 1; i++) { printf("  "); }
-                    printf("Params:\n");
-                    for (size_t i = 0; i < node->data.function.param_count; ++i) {
-                        print_ast(node->data.function.params[i], depth + 2);
-                    }
-                }
-                for (int i = 0; i < depth + 1; i++) { printf("  "); }
-                printf("Body:\n");
-                print_ast(node->data.function.body, depth + 2);
+            print_function(node, depth + 1);
             break;
         default:
             printf("Unknown node type: %s\n", node_type_to_str(node->type));

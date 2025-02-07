@@ -112,11 +112,24 @@ AstNode* expr(Parser* parser) {
     return left;
 }
 
-AstNode* scope(Parser* parser) {
+AstNode** scope(Parser* parser) {
     // todo: currently scopes can only contain a single statement,
     // the if body will need to change to allow multiple statements
     consume_token(parser, Lcurly);
-    AstNode* statements  = statement(parser);
+    AstNode** statements = malloc(sizeof(AstNode*));
+    size_t max_statements = 1;
+    size_t total_statements = 0;
+
+    while (peek(parser) != Rcurly) {
+        if (total_statements == max_statements) {
+            max_statements *= 2;
+            statements = realloc(statements, sizeof(AstNode*) * max_statements);
+        }
+        AstNode* stmt = statement(parser);
+        statements[total_statements++] = stmt;
+    }
+    statements[total_statements] = NULL;
+
     consume_token(parser, Rcurly);
     return statements;
 }
@@ -135,11 +148,11 @@ AstNode* if_statement(Parser* parser) {
     consume_token(parser, Rparen);
 
     AstNode* condition = node_binary(op->type, node_ident(left->content), node_numeric(atof(right->content)));
-    AstNode* body = scope(parser);
+    AstNode** body = scope(parser);
 
     if (peek(parser) == Else) {
         consume_token(parser, Else);
-        AstNode* else_body = scope(parser);
+        AstNode** else_body = scope(parser);
         return node_if_statement(condition, body, else_body);
     }
     return node_if_statement(condition, body, NULL);
@@ -175,7 +188,7 @@ AstNode* function(Parser* parser) {
     }
     if (!total_params) { params = NULL; }
     consume_token(parser, Rparen);
-    AstNode* body = scope(parser);
+    AstNode** body = scope(parser);
     AstNode* func = node_function(name->content, false, total_params, params, body);
     return func;
 }
