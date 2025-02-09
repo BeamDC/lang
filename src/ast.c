@@ -60,6 +60,13 @@ AstNode* node_if_statement(AstNode* condition, AstNode** body, AstNode** else_bo
     return node;
 }
 
+AstNode* node_while_loop(AstNode* condition, AstNode** body) {
+    AstNode* node = new_node(Node_While);
+    node->data.while_loop.condition = condition;
+    node->data.while_loop.body = body;
+    return node;
+}
+
 AstNode* node_function(char* name, bool public, int param_count, AstNode** params, AstNode** body) {
     AstNode* node = new_node(Node_Function);
     node->data.function.name = name;
@@ -108,6 +115,14 @@ void print_if(AstNode* node, size_t depth) {
         printf("Else: \n");
         print_scope(node->data.if_statement.else_body, depth + 1);
     }
+}
+
+void print_while(AstNode* node, size_t depth) {
+    printf("While: \n");
+    print_ast(node->data.while_loop.condition, depth);
+    for (int i = 0; i < depth; i++) { printf("  "); }
+    printf("Body: \n");
+    print_scope(node->data.while_loop.body, depth + 1);
 }
 
 void print_function(AstNode* node, size_t depth) {
@@ -162,6 +177,9 @@ void print_ast(AstNode* node, size_t depth) {
             break;
         case Node_If:
             print_if(node, depth + 1);
+            break;
+        case Node_While:
+            print_while(node, depth + 1);
             break;
         case Node_Function:
             print_function(node, depth + 1);

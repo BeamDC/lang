@@ -112,6 +112,32 @@ AstNode* expr(Parser* parser) {
     return left;
 }
 
+// todo : improve expression forming to allow variables
+// todo : expressions also have this bug where unexpected chars will terminate the function
+//      this makes it a pain when parsing conditionals, which will end unexpectedly,
+//      we want the expression handler to be more robust,
+//      and allow for use of more than just numbers
+AstNode* boolean_expr(Parser* parser) {
+    AstNode* left = expr(parser);
+    skip_whitespace(parser);
+
+    TokenType current = parser->tokens.current->type;
+    bool equality = current == Eq || current == Neq;
+    bool lg_equality = current == Le || current == Ge;
+    bool less_greater = current == Lt || current == Gt;
+    while (equality || lg_equality || less_greater) {
+        TokenType op = parser->tokens.current->type;
+        equality = op == Eq || op == Neq;
+        lg_equality = op == Le || op == Ge;
+        less_greater = op == Lt || op == Gt;
+        advance_parer(parser);
+        AstNode* right = expr(parser);
+        left = node_binary(op, left, right);
+        skip_whitespace(parser);
+    }
+    return left;
+}
+
 AstNode** scope(Parser* parser) {
     // todo: currently scopes can only contain a single statement,
     // the if body will need to change to allow multiple statements
@@ -167,6 +193,20 @@ AstNode* let_statement(Parser* parser) {
     return node_assignment(ident->content, expression);
 }
 
+AstNode* while_loop(Parser* parser) {
+    consume_token(parser, While);
+    consume_token(parser, Lparen);
+    // todo: allow for general expressions
+    // AstNode* condition = boolean_expr(parser);
+    Token* left = consume_token(parser, Ident);
+    Token* op = consume_token(parser, Eq);
+    Token* right = consume_token(parser, Numeric);
+    consume_token(parser, Rparen);
+    AstNode* condition = node_binary(op->type, node_ident(left->content), node_numeric(atof(right->content)));
+    AstNode** body = scope(parser);
+    return node_while_loop(condition, body);
+}
+
 AstNode* function(Parser* parser) {
     consume_token(parser, Fn);
     Token* name = consume_token(parser, Ident);
@@ -200,6 +240,8 @@ AstNode* statement(Parser* parser) {
             return if_statement(parser);
         case Let:
             return let_statement(parser);
+        case While:
+            return while_loop(parser);
         case Fn:
             return function(parser);
         default:
