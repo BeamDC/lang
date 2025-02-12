@@ -1,4 +1,7 @@
 #include "parser.h"
+
+#include <math.h>
+
 #include "ast.h"
 
 void advance_parer(Parser* parser) {
@@ -19,7 +22,7 @@ TokenType peek(const Parser* parser) {
     return parser->tokens.current->type;
 }
 
-Token* consume_token(Parser* parser, TokenType type) {
+Token* consume_token(Parser* parser, const TokenType type) {
     // advance the parser if and only if the current token is of a specified type
     // this helps a lot with debugging and error handling
     Token* current = parser->tokens.current;
@@ -32,76 +35,89 @@ Token* consume_token(Parser* parser, TokenType type) {
     return current;
 }
 
+bool match_token(TokenType current, TokenType* types, size_t size) {
+    // error when called with 'TokenType* types = (TokenType[]) {Le, Ge, Lt, Gt};'
+    // size_t size = sizeof(types) / sizeof(TokenType); // size calculation is incorrect.
+    for (size_t i = 0; i < size; ++i) {
+        if (current == types[i]) {
+            return true;
+        }
+    }
+    return false;
+}
+
+Token* consume_token_variants(Parser* parser, TokenType* types, size_t size) {
+    TokenType current = peek(parser);
+    for (size_t i = 0; i < size; ++i) {
+        if (current == types[i]) {
+            return consume_token(parser, current);
+        }
+    }
+    fprintf(stderr, "Unexpected token : %s\n", token_to_string(current));
+    exit(1);
+}
+
 AstNode* factor(Parser* parser) {
     skip_whitespace(parser);
 
-    if (parser->tokens.current->type == Numeric) {
+    if (peek(parser) == Numeric) {
         double value = atoi(parser->tokens.current->content);
         advance_parer(parser);
         return node_numeric(value);
     }
 
-    if (parser->tokens.current->type == Lparen) {
-        advance_parer(parser);
-        AstNode* expression = expr(parser);
+    if (peek(parser) == Ident) {
+        Token* var = consume_token(parser, Ident);
+        return node_ident(var->content);
+    }
 
-        if (parser->tokens.current->type == Rparen) {
-            advance_parer(parser);
-            return expression;
-        }
-        fprintf(stderr, "No closing parenthesis");
-        exit(1);
+    if (peek(parser) == Lparen) {
+        consume_token(parser, Lparen);
+        AstNode* expression = logical_or(parser);
+        consume_token(parser, Rparen);
+        return expression;
     }
 
     // Unary Operations
-    AstNode* unary;
-    switch (parser->tokens.current->type) {
-        case Add:
-            advance_parer(parser);
-            unary = node_unary(Add, factor(parser));
-            break;
-        case Sub:
-            advance_parer(parser);
-            unary = node_unary(Sub, factor(parser));
-            break;
-        case Bang:
-            advance_parer(parser);
-            unary = node_unary(Bang, factor(parser));
-            break;
-        case BitNot:
-            advance_parer(parser);
-            unary = node_unary(BitNot, factor(parser));
-            break;
-        default:
-            fprintf(stderr, "Unexpected Token:\n");
-            fprintf(stderr, "  Type    : %s\n", token_to_string(parser->tokens.current->type));
-            fprintf(stderr, "  Content : '%s'", parser->tokens.current->content);
-            exit(1);
-            // break;
+    TokenType* types = (TokenType[]) {Add, Sub, Bang, BitNot};
+    size_t types_size = 4;
+    TokenType type = peek(parser);
+
+    if (match_token(type, types, types_size)) {
+        advance_parer(parser);
+        return node_unary(type, factor(parser));
     }
-    return unary;
+
+    fprintf(stderr, "Unexpected Token:\n");
+    fprintf(stderr, "  Type    : %s\n", token_to_string(parser->tokens.current->type));
+    fprintf(stderr, "  Content : '%s'", parser->tokens.current->content);
+    fprintf(stderr, "  line : '%llu'", parser->tokens.current->line);
+    fprintf(stderr, "  Col : '%llu'", parser->tokens.current->col);
+    exit(1);
+
 }
 
 AstNode* term(Parser* parser) {
     AstNode* left = factor(parser);
     skip_whitespace(parser);
-
-    while (parser->tokens.current->type == Mul || parser->tokens.current->type == Div) {
+    TokenType* types = (TokenType[]) {Mul, Div};
+    size_t types_size = 2;
+    while (match_token(peek(parser), types, types_size)) {
         TokenType op = parser->tokens.current->type;
         advance_parer(parser);
         AstNode* right = factor(parser);
         left = node_binary(op, left, right);
         skip_whitespace(parser);
     }
-
     return left;
 }
 
 AstNode* expr(Parser* parser) {
     AstNode* left = term(parser);
     skip_whitespace(parser);
-
-    while (parser->tokens.current->type == Add || parser->tokens.current->type == Sub) {
+    TokenType* types = (TokenType[]) {Add, Sub};
+    size_t types_size = 2;
+    while (match_token(peek(parser), types, types_size)) {
         TokenType op = parser->tokens.current->type;
         advance_parer(parser);
         AstNode* right = term(parser);
@@ -117,24 +133,110 @@ AstNode* expr(Parser* parser) {
 //      this makes it a pain when parsing conditionals, which will end unexpectedly,
 //      we want the expression handler to be more robust,
 //      and allow for use of more than just numbers
-AstNode* boolean_expr(Parser* parser) {
+AstNode* relational_comparison(Parser* parser) {
     AstNode* left = expr(parser);
     skip_whitespace(parser);
 
-    TokenType current = parser->tokens.current->type;
-    bool equality = current == Eq || current == Neq;
-    bool lg_equality = current == Le || current == Ge;
-    bool less_greater = current == Lt || current == Gt;
-    while (equality || lg_equality || less_greater) {
+    TokenType* types = (TokenType[]) {Le, Ge, Lt, Gt};
+    size_t types_size = 4;
+    while (match_token(peek(parser), types, types_size)) {
         TokenType op = parser->tokens.current->type;
-        equality = op == Eq || op == Neq;
-        lg_equality = op == Le || op == Ge;
-        less_greater = op == Lt || op == Gt;
         advance_parer(parser);
         AstNode* right = expr(parser);
         left = node_binary(op, left, right);
         skip_whitespace(parser);
     }
+    return left;
+}
+
+AstNode* equality_comparison(Parser* parser) {
+    AstNode* left = relational_comparison(parser);
+    skip_whitespace(parser);
+
+    TokenType* types = (TokenType[]) {Eq, Neq};
+    size_t types_size = 2;
+    while (match_token(peek(parser), types, types_size)) {
+        TokenType op = parser->tokens.current->type;
+        advance_parer(parser);
+        AstNode* right = relational_comparison(parser);
+        left = node_binary(op, left, right);
+        skip_whitespace(parser);
+    }
+    return left;
+}
+
+AstNode* bitwise_and(Parser* parser) {
+    AstNode* left = equality_comparison(parser);
+    skip_whitespace(parser);
+
+    while (peek(parser) == BitAnd) {
+        TokenType op = parser->tokens.current->type;
+        advance_parer(parser);
+        AstNode* right = equality_comparison(parser);
+        left = node_binary(op, left, right);
+        skip_whitespace(parser);
+    }
+
+    return left;
+}
+
+AstNode* bitwise_xor(Parser* parser) {
+    AstNode* left = bitwise_and(parser);
+    skip_whitespace(parser);
+
+    while (peek(parser) == BitXor) {
+        TokenType op = parser->tokens.current->type;
+        advance_parer(parser);
+        AstNode* right = bitwise_and(parser);
+        left = node_binary(op, left, right);
+        skip_whitespace(parser);
+    }
+
+    return left;
+}
+
+AstNode* bitwise_or(Parser* parser) {
+    AstNode* left = bitwise_xor(parser);
+    skip_whitespace(parser);
+
+    while (peek(parser) == BitOr) {
+        TokenType op = parser->tokens.current->type;
+        advance_parer(parser);
+        AstNode* right = bitwise_xor(parser);
+        left = node_binary(op, left, right);
+        skip_whitespace(parser);
+    }
+
+    return left;
+}
+
+AstNode* logical_and(Parser* parser) {
+    AstNode* left = bitwise_or(parser);
+    skip_whitespace(parser);
+
+    while (peek(parser) == And) {
+        TokenType op = parser->tokens.current->type;
+        advance_parer(parser);
+        AstNode* right = bitwise_or(parser);
+        left = node_binary(op, left, right);
+        skip_whitespace(parser);
+    }
+
+    return left;
+}
+
+AstNode* logical_or(Parser* parser) {
+    AstNode* left = logical_and(parser);
+    skip_whitespace(parser);
+
+    while (peek(parser) == Or) {
+        TokenType op = parser->tokens.current->type;
+        advance_parer(parser);
+        AstNode* right = logical_and(parser);
+        left = node_binary(op, left, right);
+        skip_whitespace(parser);
+    }
+
     return left;
 }
 
@@ -163,17 +265,10 @@ AstNode** scope(Parser* parser) {
 AstNode* if_statement(Parser* parser) {
     consume_token(parser, If);
 
-    // for now conditions will be very specific,
-    // in the future we will allow for more complex conditionals
     consume_token(parser, Lparen);
-    // todo : allow for more general expressions
-    Token* left = consume_token(parser, Ident);
-    Token* op = consume_token(parser, Eq);
-    Token* right = consume_token(parser, Numeric);
-
+    AstNode* condition = logical_or(parser);
     consume_token(parser, Rparen);
 
-    AstNode* condition = node_binary(op->type, node_ident(left->content), node_numeric(atof(right->content)));
     AstNode** body = scope(parser);
 
     if (peek(parser) == Else) {
@@ -188,7 +283,7 @@ AstNode* let_statement(Parser* parser) {
     consume_token(parser, Let);
     Token* ident = consume_token(parser, Ident);
     consume_token(parser, Assign);
-    AstNode* expression = expr(parser);
+    AstNode* expression = logical_or(parser);
     consume_token(parser, Semicolon); // end of assignment
     return node_assignment(ident->content, expression);
 }
@@ -196,13 +291,9 @@ AstNode* let_statement(Parser* parser) {
 AstNode* while_loop(Parser* parser) {
     consume_token(parser, While);
     consume_token(parser, Lparen);
-    // todo: allow for general expressions
-    // AstNode* condition = boolean_expr(parser);
-    Token* left = consume_token(parser, Ident);
-    Token* op = consume_token(parser, Eq);
-    Token* right = consume_token(parser, Numeric);
+    AstNode* condition = logical_or(parser);
     consume_token(parser, Rparen);
-    AstNode* condition = node_binary(op->type, node_ident(left->content), node_numeric(atof(right->content)));
+
     AstNode** body = scope(parser);
     return node_while_loop(condition, body);
 }
@@ -211,12 +302,12 @@ AstNode* function(Parser* parser) {
     consume_token(parser, Fn);
     Token* name = consume_token(parser, Ident);
     consume_token(parser, Lparen);
-    // consume parameters for now
     AstNode** params = malloc(sizeof(AstNode*));
     size_t max_params = 1;
     size_t total_params = 0;
     while (peek(parser) != Rparen) {
         // todo : add types for params later
+
         Token* param = consume_token(parser, Ident);
         if (total_params == max_params) {
             max_params *= 2;
@@ -233,13 +324,78 @@ AstNode* function(Parser* parser) {
     return func;
 }
 
+AstNode* var_update(Parser* parser) {
+    Token* ident = consume_token(parser, Ident);
+    TokenType *types = (TokenType[]){
+        Assign, CompAdd, CompSub,
+        CompMul, CompDiv, CompMod,
+        CompLshift, CompRshift,
+        CompBitAnd, CompBitXor,
+        CompBitOr, CompBitNot
+    };
+    size_t types_size = 12;
+    TokenType assign_op = consume_token_variants(parser, types, types_size)->type;
+    AstNode* expression = logical_or(parser);
+    TokenType op;
+
+    switch (assign_op) {
+        case Assign:
+            return node_assignment(ident->content, expression);
+        case CompAdd:
+            op = Add;
+            break;
+        case CompSub:
+            op = Sub;
+            break;
+        case CompMul:
+            op = Mul;
+            break;
+        case CompDiv:
+            op = Div;
+            break;
+        case CompMod:
+            op = Mod;
+            break;
+        case CompLshift:
+            op = Lshift;
+            break;
+        case CompRshift:
+            op = Rshift;
+            break;
+        case CompBitAnd:
+            op = BitAnd;
+            break;
+        case CompBitOr:
+            op = BitOr;
+            break;
+        case CompBitXor:
+            op = BitXor;
+            break;
+        case CompBitNot:
+            op = BitNot;
+            break;
+        default:
+            /*
+            does nothing, errors should be caught
+            when assign_op is parsed.
+            */;
+    }
+
+    expression = node_binary(op, node_ident(ident->content), expression);
+
+    consume_token(parser, Semicolon);
+    return node_assignment(ident->content, expression);
+}
+
 AstNode* statement(Parser* parser) {
     skip_whitespace(parser);
     switch (parser->tokens.current->type) {
-        case If:
-            return if_statement(parser);
         case Let:
             return let_statement(parser);
+        case Ident:
+            return var_update(parser);
+        case If:
+            return if_statement(parser);
         case While:
             return while_loop(parser);
         case Fn:
@@ -250,8 +406,6 @@ AstNode* statement(Parser* parser) {
     /// fails when called at EOF
 }
 
-// we possibly want to build out from a given node
-// then this can be called to allow scope to process multiple lines
 AstNode* build_tree(Parser* parser) {
     AstNode* root = node_root();
     while (parser->tokens.current->type != Eof) {
@@ -260,7 +414,6 @@ AstNode* build_tree(Parser* parser) {
             root->data.root.size *= 2;
             root->data.root.items = realloc(root->data.root.items, sizeof(AstNode*) * root->data.root.size);
         }
-        // print_ast(stmt, 0);
         root->data.root.items[root->data.root.used++] = stmt;
     }
     return root;
@@ -271,7 +424,5 @@ Parser parse(TokenList tokens) {
     parser.code = 0;
     parser.tokens = tokens;
     parser.ast = build_tree(&parser);
-    // parser.ast = statement(&parser);
-    // parser.ast = statement(&parser);
     return parser;
 }

@@ -25,9 +25,19 @@ typedef struct {
 } Parser;
 ///////////////////////////
 AstNode* statement(Parser* parser);
+
+// expression forming - lowest to highest precedence
+AstNode* logical_or(Parser* parser);
+AstNode* logical_and(Parser* parser);
+AstNode* bitwise_or(Parser* parser);
+AstNode* bitwise_xor(Parser* parser);
+AstNode* bitwise_and(Parser* parser);
+AstNode* equality_comparison(Parser* parser);
+AstNode* relational_comparison(Parser* parser);
 AstNode* expr(Parser* parser);
 AstNode* term(Parser* parser);
 AstNode* factor(Parser* parser);
+
 AstNode** scope(Parser* parser);
 AstNode* if_statement(Parser* parser);
 AstNode* let_statement(Parser* parser);

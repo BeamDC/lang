@@ -80,7 +80,7 @@ Token make_token_with_variants(char** input, const char** variants, TokenType* t
             current_type = types[i];
         }
     }
-    *input += (max_len == 0) ? 1 : max_len;
+    *input += max_len == 0 ? 1 : max_len;
     return make_token(input, start, current_type);
 }
 

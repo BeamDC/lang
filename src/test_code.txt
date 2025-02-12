@@ -1,6 +1,4 @@
-fn main() {
-    let value = 100;
-    while (value == 100) {
-        let value = 1;
-    }
+fn main(a, b) {
+    let a = 5;
+    a <<= 2 + 3;
 }
