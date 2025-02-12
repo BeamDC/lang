@@ -1,7 +1,4 @@
 #include "parser.h"
-
-#include <math.h>
-
 #include "ast.h"
 
 void advance_parer(Parser* parser) {
@@ -36,8 +33,6 @@ Token* consume_token(Parser* parser, const TokenType type) {
 }
 
 bool match_token(TokenType current, TokenType* types, size_t size) {
-    // error when called with 'TokenType* types = (TokenType[]) {Le, Ge, Lt, Gt};'
-    // size_t size = sizeof(types) / sizeof(TokenType); // size calculation is incorrect.
     for (size_t i = 0; i < size; ++i) {
         if (current == types[i]) {
             return true;
@@ -128,8 +123,7 @@ AstNode* expr(Parser* parser) {
     return left;
 }
 
-// todo : improve expression forming to allow variables
-// todo : expressions also have this bug where unexpected chars will terminate the function
+// todo : expressions have this bug where unexpected chars will terminate the function
 //      this makes it a pain when parsing conditionals, which will end unexpectedly,
 //      we want the expression handler to be more robust,
 //      and allow for use of more than just numbers
@@ -241,8 +235,6 @@ AstNode* logical_or(Parser* parser) {
 }
 
 AstNode** scope(Parser* parser) {
-    // todo: currently scopes can only contain a single statement,
-    // the if body will need to change to allow multiple statements
     consume_token(parser, Lcurly);
     AstNode** statements = malloc(sizeof(AstNode*));
     size_t max_statements = 1;
