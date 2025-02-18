@@ -11,6 +11,7 @@ typedef enum {
     Node_BinOp,
     Node_UnOp,
     Node_Assignment,
+    Node_Reassignment,
     Node_Ident,
     Node_If,
     Node_While,
@@ -64,6 +65,12 @@ typedef struct AstNode{
         }while_loop;
 
         struct {
+            struct AstNode* iterator;
+            struct AstNode* iterable;
+            struct AstNode** body;
+        }for_loop;
+
+        struct {
             char* name;
             bool public;
             int param_count;
@@ -76,13 +83,17 @@ typedef struct AstNode{
 void print_ast(AstNode* node, size_t depth);
 
 AstNode* new_node(NodeType type);
+
 AstNode* node_root();
 AstNode* node_numeric(double value);
 AstNode* node_ident(char* name);
 AstNode* node_binary(TokenType op, AstNode* left, AstNode* right);
 AstNode* node_unary(TokenType op, AstNode* operand);
 AstNode* node_assignment(char* var_name, AstNode* value);
+AstNode* node_reassignment(char* var_name, AstNode* value);
 AstNode* node_if_statement(AstNode* condition, AstNode** body, AstNode** else_body);
 AstNode* node_while_loop(AstNode* condition, AstNode** body);
+AstNode* node_for_loop(AstNode* iterator, AstNode* iterable, AstNode** body);
 AstNode* node_function(char* name, bool public, int param_count, AstNode** params, AstNode** body);
+
 #endif //AST_H

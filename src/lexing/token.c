@@ -61,7 +61,8 @@ char* token_to_string(TokenType t) {
         "Bool", "True", "False",
         "Let", "Const",
         "If", "Else",
-        "For", "While", "Loop",
+        "For", "In",
+        "While", "Loop",
         "Null",
         "Return",
 
@@ -107,7 +108,8 @@ TokenType get_ident_or_keyword(char** input, const char* start) {
         "bool", "true", "false",
         "let", "const",
         "if", "else",
-        "for", "while", "loop",
+        "for", "in",
+        "while", "loop",
         "null",
         "return",
     };
@@ -117,7 +119,8 @@ TokenType get_ident_or_keyword(char** input, const char* start) {
         Bool, True, False,
         Let, Const,
         If, Else,
-        For, While, Loop,
+        For, In,
+        While, Loop,
         Null,
         Return,
     };

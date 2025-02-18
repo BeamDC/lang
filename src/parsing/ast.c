@@ -52,6 +52,13 @@ AstNode* node_assignment(char* var_name, AstNode* value) {
     return node;
 }
 
+AstNode* node_reassignment(char* var_name, AstNode* value) {
+    AstNode* node = new_node(Node_Reassignment);
+    node->data.assignment.variable = var_name;
+    node->data.assignment.value = value;
+    return node;
+}
+
 AstNode* node_if_statement(AstNode* condition, AstNode** body, AstNode** else_body) {
     AstNode* node = new_node(Node_If);
     node->data.if_statement.condition = condition;
@@ -64,6 +71,14 @@ AstNode* node_while_loop(AstNode* condition, AstNode** body) {
     AstNode* node = new_node(Node_While);
     node->data.while_loop.condition = condition;
     node->data.while_loop.body = body;
+    return node;
+}
+
+AstNode* node_for_loop(AstNode* iterator, AstNode* iterable, AstNode** body) {
+    AstNode* node = new_node(Node_For);
+    node->data.for_loop.iterator = iterator;
+    node->data.for_loop.iterable = iterable;
+    node->data.for_loop.body = body;
     return node;
 }
 
@@ -125,6 +140,22 @@ void print_while(AstNode* node, size_t depth) {
     print_scope(node->data.while_loop.body, depth + 1);
 }
 
+void print_for(AstNode* node, size_t depth) {
+    printf("For: \n");
+
+    for (int i = 0; i < depth; i++) { printf("  "); }
+    printf("Iterator: \n");
+    print_ast(node->data.for_loop.iterator, depth + 1);
+
+    for (int i = 0; i < depth; i++) { printf("  "); }
+    printf("Iterable: \n");
+    print_ast(node->data.for_loop.iterable, depth + 1);
+
+    for (int i = 0; i < depth; i++) { printf("  "); }
+    printf("Body: \n");
+    print_scope(node->data.for_loop.body, depth + 1);
+}
+
 void print_function(AstNode* node, size_t depth) {
     printf("Function: %s\n", node->data.function.name);
     for (int i = 0; i < depth; i++) { printf("  "); }
@@ -175,11 +206,18 @@ void print_ast(AstNode* node, size_t depth) {
             printf("Assign: %s\n", node->data.assignment.variable);
             print_ast(node->data.assignment.value, depth + 1);
             break;
+        case Node_Reassignment:
+            printf("Reassign: %s\n", node->data.assignment.variable);
+            print_ast(node->data.assignment.value, depth + 1);
+            break;
         case Node_If:
             print_if(node, depth + 1);
             break;
         case Node_While:
             print_while(node, depth + 1);
+            break;
+        case Node_For:
+            print_for(node, depth + 1);
             break;
         case Node_Function:
             print_function(node, depth + 1);

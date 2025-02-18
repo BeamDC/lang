@@ -95,8 +95,8 @@ AstNode* factor(Parser* parser) {
 AstNode* term(Parser* parser) {
     AstNode* left = factor(parser);
     skip_whitespace(parser);
-    TokenType* types = (TokenType[]) {Mul, Div};
-    size_t types_size = 2;
+    TokenType* types = (TokenType[]) {Mul, Div, Mod};
+    size_t types_size = 3;
     while (match_token(peek(parser), types, types_size)) {
         TokenType op = parser->tokens.current->type;
         advance_parer(parser);
@@ -290,6 +290,30 @@ AstNode* while_loop(Parser* parser) {
     return node_while_loop(condition, body);
 }
 
+// todo : this will be a for loop structured around how rust for loops work.
+//      it will employ exclusively iterators over some iterable
+//      for now it will only work on ranges, until we have iterators implemented
+AstNode* for_loop(Parser* parser) {
+    consume_token(parser, For);
+    // todo : allow for tuples of idents later
+    Token* tracker = consume_token(parser, Ident);
+    consume_token(parser, In);
+
+    // todo : iterables
+    //      since ranges are usize only,
+    //      we can have a static definition here
+    double start = atof(consume_token(parser, Numeric)->content);
+    Token* range = consume_token(parser, Range);
+    double end = atof(consume_token(parser, Numeric)->content);
+
+    AstNode** body = scope(parser);
+
+    AstNode* iterable = node_binary(Range, node_numeric(start), node_numeric(end));
+    AstNode* iterator = node_ident(tracker->content);
+
+    return node_for_loop(iterator, iterable, body);
+}
+
 AstNode* function(Parser* parser) {
     consume_token(parser, Fn);
     Token* name = consume_token(parser, Ident);
@@ -373,10 +397,11 @@ AstNode* var_update(Parser* parser) {
             */;
     }
 
+    // op will be initialized by here, any case that would mean otherwise should already be caught
     expression = node_binary(op, node_ident(ident->content), expression);
 
     consume_token(parser, Semicolon);
-    return node_assignment(ident->content, expression);
+    return node_reassignment(ident->content, expression);
 }
 
 AstNode* statement(Parser* parser) {
@@ -390,6 +415,8 @@ AstNode* statement(Parser* parser) {
             return if_statement(parser);
         case While:
             return while_loop(parser);
+        case For:
+            return for_loop(parser);
         case Fn:
             return function(parser);
         default:

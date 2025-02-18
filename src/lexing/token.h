@@ -61,7 +61,8 @@ typedef enum {
     Bool, True, False,
     Let, Const,
     If, Else,
-    For, While, Loop,
+    For, In,
+    While, Loop,
     Null,
     Return,
 
@@ -76,28 +77,22 @@ typedef enum {
     Error, Eof, Whitespace, Unkown,
 }TokenType;
 
-// typedef enum {
-//     Prec_None,
-//     Prec_Assignment,  // = += etc.
-//     Prec_Or,          // || |
-//     Prec_Xor,         // ^^ ^
-//     Prec_And,         // && &
-//     Prec_Equality,    // == !=
-//     Prec_Comparison,  // < > <= >=
-//     Prec_Shift,       // << >>
-//     Prec_Term,        // + -
-//     Prec_Factor,      // * / %
-//     Prec_Unary,       // ! -
-//     Prec_Acess,       // .
-//     Prec_Call,        // ()
-//     Prec_Primary
-// } Precedence;
+typedef enum {
+    t_None = 0, // also allows us to do if(datatype), could be useful idk
+
+    // ints
+    t_i8, t_i16, t_i32, t_i64,
+    t_u8, t_u16, t_u32, t_u64,
+
+    // floats
+    t_f16, t_f32, t_f64 , t_f128,
+} DataType;
 
 // todo : add row and column data for error handling
 typedef struct {
     TokenType type;
     char* content;
-    // Precedence precedence;
+    DataType data;
     size_t line;
     size_t col;
 } Token;

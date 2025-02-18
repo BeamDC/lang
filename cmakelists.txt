@@ -1,0 +1,13 @@
+cmake_minimum_required(VERSION 3.29)
+project(lang C)
+
+set(CMAKE_C_STANDARD 11)
+
+add_executable(
+        lang src/main.c
+        src/lexing/lexer.c
+        src/lexing/token.c
+        src/parsing/parser.c
+        src/parsing/ast.c
+        src/file_io.c
+)
