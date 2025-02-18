@@ -2,8 +2,8 @@
 #define AST_H
 
 #include <stdbool.h>
-#include <stdio.h>
-#include "token.h"
+#include <stdlib.h>
+#include "../lexing/token.h"
 
 typedef enum {
     Node_None,
@@ -39,6 +39,7 @@ typedef struct AstNode{
 
         struct {
             char* variable;
+            TokenType type;
             struct AstNode* value;
         }assignment;
 
@@ -74,9 +75,14 @@ typedef struct AstNode{
             char* name;
             bool public;
             int param_count;
+            TokenType return_type;
             struct AstNode** params;
             struct AstNode** body;
         }function;
+
+        struct {
+            struct AstNode* val;
+        }return_statement;
     } data;
 } AstNode;
 
@@ -89,11 +95,12 @@ AstNode* node_numeric(double value);
 AstNode* node_ident(char* name);
 AstNode* node_binary(TokenType op, AstNode* left, AstNode* right);
 AstNode* node_unary(TokenType op, AstNode* operand);
-AstNode* node_assignment(char* var_name, AstNode* value);
-AstNode* node_reassignment(char* var_name, AstNode* value);
+AstNode* node_assignment(char* var_name, AstNode* value, TokenType type);
+AstNode* node_reassignment(char* var_name, AstNode* value, TokenType type);
 AstNode* node_if_statement(AstNode* condition, AstNode** body, AstNode** else_body);
 AstNode* node_while_loop(AstNode* condition, AstNode** body);
 AstNode* node_for_loop(AstNode* iterator, AstNode* iterable, AstNode** body);
-AstNode* node_function(char* name, bool public, int param_count, AstNode** params, AstNode** body);
+AstNode* node_function(char* name, bool public, int param_count, AstNode** params, TokenType returns, AstNode** body);
+AstNode* node_return(AstNode* expression);
 
 #endif //AST_H

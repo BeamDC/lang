@@ -1,8 +1,4 @@
-#include<stdlib.h>
-#include "token.h"
-#include <stdbool.h>
-#include <stdio.h>
-#include <string.h>
+#include "lexer.h"
 
 // tracking lexer pos
 size_t line = 1;
@@ -38,6 +34,14 @@ bool is_ident_char(char c) {
 
 bool is_operator(char c) {
     return is_in_str(c, ".+-*/%<>&|^!=~");
+}
+
+char peek_char(char** input) {
+    if (*input + 1 == NULL) {
+        fprintf(stderr, "Peeked at NULL! *arc of covenant face melting*");
+        exit(1);
+    }
+    return *(*input + 1);
 }
 
 // make a token of specified type
@@ -95,8 +99,20 @@ Token make_error_token(char** input, char* message) {
 
 Token make_numeric(char** input) {
     char* start = *input;
-    // todo : allow for float values
     while(is_digit(**input)) { (*input)++; }
+    // check for decimals or range
+    char peeked = peek_char(input);
+    if (**input == '.' && peeked == '.') { // range
+        Token tok = make_token(input, start, Numeric);
+        return tok;
+    }
+
+    if (**input == '.') {
+        (*input)++;
+        while (is_digit(**input)) {
+            (*input)++;
+        }
+    }
     Token tok = make_token(input, start, Numeric);
     return tok;
 }
@@ -151,8 +167,8 @@ Token make_operator(char** input) {
         case '-':
             tok = make_token_with_variants(
                     input,
-                    (const char*[]) { "-=", NULL},
-                    (TokenType[]) { CompSub },
+                    (const char*[]) { "-=", "->", NULL},
+                    (TokenType[]) { CompSub, Arrow },
                     Sub
                     );
             break;

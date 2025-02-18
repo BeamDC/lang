@@ -2,7 +2,9 @@
 #define LANG_TOKEN_H
 
 #include <stdio.h>
-
+#include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
 
 typedef enum {
     // Single char
@@ -63,8 +65,19 @@ typedef enum {
     If, Else,
     For, In,
     While, Loop,
-    Null,
+    None,
     Return,
+
+    // Data Types
+    // pointer
+    isize, usize,
+
+    // ints
+    i8, i16, i32, i64,
+    u8, u16, u32, u64,
+
+    // floats
+    f16, f32, f64 , f128,
 
     // Literals
     Ident,
@@ -88,7 +101,6 @@ typedef enum {
     t_f16, t_f32, t_f64 , t_f128,
 } DataType;
 
-// todo : add row and column data for error handling
 typedef struct {
     TokenType type;
     char* content;

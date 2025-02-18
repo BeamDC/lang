@@ -1,7 +1,4 @@
 #include "file_io.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 StringView file_read(const char* path) {
     FILE* f = fopen(path, "r");
@@ -21,7 +18,7 @@ StringView file_read(const char* path) {
         }
         str.string[str.length++] = ch;
     }
-    // cut off at end
+    // NULL Terminator :robot:
     str.string[str.length] = 0;
     return str;
 }

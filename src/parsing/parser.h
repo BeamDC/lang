@@ -4,7 +4,8 @@
 #include <stdlib.h>
 
 #include "ast.h"
-#include "token.h"
+#include "../lexing/token.h"
+#include "ast.h"
 
 /// Parser Construction ///
 typedef enum {
@@ -39,8 +40,8 @@ AstNode* term(Parser* parser);
 AstNode* factor(Parser* parser);
 
 AstNode** scope(Parser* parser);
-AstNode* if_statement(Parser* parser);
 AstNode* let_statement(Parser* parser);
+AstNode* if_statement(Parser* parser);
 Parser parse(TokenList tokens);
 
 #endif

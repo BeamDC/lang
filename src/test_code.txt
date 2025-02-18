@@ -1,5 +1,8 @@
-fn main () {
-    if (a + 2 > 5) {
-        let b = 6;
+fn is_prime(n) -> usize {
+    for i in 0..(n**(1/2)) {
+        if (!(n % i)) {
+            return 0;
+        }
     }
+    return 1;
 }

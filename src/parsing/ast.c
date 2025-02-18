@@ -1,8 +1,6 @@
 #include "ast.h"
-#include "token.h"
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <math.h>
 
 AstNode* new_node(NodeType type) {
     AstNode* node = malloc(sizeof(AstNode));
@@ -45,17 +43,19 @@ AstNode* node_binary(TokenType op, AstNode* left, AstNode* right) {
     return node;
 }
 
-AstNode* node_assignment(char* var_name, AstNode* value) {
+AstNode* node_assignment(char* var_name, AstNode* value, TokenType type) {
     AstNode* node = new_node(Node_Assignment);
     node->data.assignment.variable = var_name;
     node->data.assignment.value = value;
+    node->data.assignment.type = type;
     return node;
 }
 
-AstNode* node_reassignment(char* var_name, AstNode* value) {
+AstNode* node_reassignment(char* var_name, AstNode* value, TokenType type) {
     AstNode* node = new_node(Node_Reassignment);
     node->data.assignment.variable = var_name;
     node->data.assignment.value = value;
+    node->data.assignment.type = type;
     return node;
 }
 
@@ -82,14 +82,20 @@ AstNode* node_for_loop(AstNode* iterator, AstNode* iterable, AstNode** body) {
     return node;
 }
 
-AstNode* node_function(char* name, bool public, int param_count, AstNode** params, AstNode** body) {
+AstNode* node_function(char* name, bool public, int param_count, AstNode** params, TokenType returns, AstNode** body) {
     AstNode* node = new_node(Node_Function);
     node->data.function.name = name;
     node->data.function.public = public;
     node->data.function.param_count = param_count;
-    // node->data.function.params = malloc(sizeof(AstNode) * param_count);
     node->data.function.params = params;
+    node->data.function.return_type = returns;
     node->data.function.body = body;
+    return node;
+}
+
+AstNode* node_return(AstNode* expression) {
+    AstNode* node = new_node(Node_Return);
+    node->data.return_statement.val = expression;
     return node;
 }
 
@@ -165,6 +171,10 @@ void print_function(AstNode* node, size_t depth) {
     } else {
         printf("Private\n");
     }
+
+    for (int i = 0; i < depth; i++) { printf("  "); }
+    printf("Returns -> %s\n", token_to_string(node->data.function.return_type));
+
     if (node->data.function.param_count) {
         for (int i = 0; i < depth; i++) { printf("  "); }
         printf("Params:\n");
@@ -172,6 +182,7 @@ void print_function(AstNode* node, size_t depth) {
             print_ast(node->data.function.params[i], depth + 1);
         }
     }
+
     for (int i = 0; i < depth; i++) { printf("  "); }
     printf("Body:\n");
     print_scope(node->data.function.body, depth + 1);
@@ -204,10 +215,14 @@ void print_ast(AstNode* node, size_t depth) {
             break;
         case Node_Assignment:
             printf("Assign: %s\n", node->data.assignment.variable);
+            for (int i = 0; i < depth + 1; i++) { printf("  "); }
+            printf("Type: %s\n", token_to_string(node->data.assignment.type));
             print_ast(node->data.assignment.value, depth + 1);
             break;
         case Node_Reassignment:
             printf("Reassign: %s\n", node->data.assignment.variable);
+            for (int i = 0; i < depth + 1; i++) { printf("  "); }
+            printf("Type: %s\n", token_to_string(node->data.assignment.type));
             print_ast(node->data.assignment.value, depth + 1);
             break;
         case Node_If:
@@ -221,6 +236,10 @@ void print_ast(AstNode* node, size_t depth) {
             break;
         case Node_Function:
             print_function(node, depth + 1);
+            break;
+        case Node_Return:
+            printf("Return:\n");
+            print_ast(node->data.return_statement.val, depth + 1);
             break;
         default:
             printf("Unknown node type: %s\n", node_type_to_str(node->type));

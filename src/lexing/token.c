@@ -1,7 +1,4 @@
 #include "token.h"
-#include <stdbool.h>
-#include <stdlib.h>
-#include <string.h>
 
 char* token_to_string(TokenType t) {
     static char* strings[] = {
@@ -66,6 +63,13 @@ char* token_to_string(TokenType t) {
         "Null",
         "Return",
 
+        "isize", "usize",
+
+        "int_8", "int_16", "int_32", "int_64",
+        "unsigned_8", "unsigned_16", "unsigned_32", "unsigned_64",
+
+        "float_16", "float_32", "float_64", "float_128",
+
         // Literals
         "Ident",
         "String",
@@ -80,23 +84,6 @@ char* token_to_string(TokenType t) {
     return strings[t];
 }
 
-// char* precedence_to_string(Precedence prec) {
-//     static char* strings[] = {
-//         "Prec_None",
-//         "Prec_Assignment",
-//         "Prec_Or",
-//         "Prec_And",
-//         "Prec_Equality",
-//         "Prec_Comparison",
-//         "Prec_Term",
-//         "Prec_Factor",
-//         "Prec_Unary",
-//         "Prec_Call",
-//         "Prec_Primary"
-//     };
-//     return strings[prec];
-// }
-
 TokenType get_ident_or_keyword(char** input, const char* start) {
     size_t len = *input - start;
     char* word = malloc(len + 1);
@@ -110,8 +97,15 @@ TokenType get_ident_or_keyword(char** input, const char* start) {
         "if", "else",
         "for", "in",
         "while", "loop",
-        "null",
+        "none",
         "return",
+
+        "isize", "usize",
+
+        "i8", "i16", "i32", "i64",
+        "u8", "u16", "u32", "u64",
+
+        "f16", "f32", "f64", "f128",
     };
 
     static const TokenType keywords[] = {
@@ -121,8 +115,15 @@ TokenType get_ident_or_keyword(char** input, const char* start) {
         If, Else,
         For, In,
         While, Loop,
-        Null,
+        None,
         Return,
+
+        isize, usize,
+
+        i8, i16, i32, i64,
+        u8, u16, u32, u64,
+
+        f16, f32, f64 , f128,
     };
 
     for (size_t i = 0; i < sizeof(strings)/sizeof(char*); ++i) {
@@ -143,7 +144,6 @@ void print_token_list(TokenList tl) {
         printf("__________________________________________________\n");
         printf("| Type : %-39s |\n", token_to_string(tok.type));
         printf("| Content : %-36s |\n", tok.content);
-        // printf("| Precedence : %-33s |\n", precedence_to_string(tok.precedence));
         printf("| line : %-39llu |\n", tok.line);
         printf("| col : %-40llu |\n", tok.col);
     }
