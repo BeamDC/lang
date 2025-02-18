@@ -64,8 +64,28 @@ AstNode* factor(Parser* parser) {
     }
 
     if (parser->tokens.current->type == Ident) {
-        Token* var = consume_token(parser, Ident);
-        return node_ident(var->content);
+        Token* val = consume_token(parser, Ident);
+        // todo : this has several issues :
+        if (parser->tokens.current->type == Lparen) {
+            AstNode** args = malloc(sizeof(AstNode*));
+            size_t max_args = 1;
+            size_t total_args = 0;
+
+            while (parser->tokens.current->type != Rparen) {
+                AstNode* arg = logical_or(parser);
+                if (total_args == max_args) {
+                    max_args *= 2;
+                    args = realloc(args, sizeof(AstNode*) * max_args);
+                }
+                args[total_args++] = arg;
+                if (parser->tokens.current->type == Rparen) { break; }
+                consume_token(parser, Comma);
+            }
+            if (!total_args) { args = NULL; }
+            consume_token(parser, Rparen);
+            return node_call(node_ident(val->content), args, total_args);
+        }
+        return node_ident(val->content);
     }
 
     if (parser->tokens.current->type == Lparen) {

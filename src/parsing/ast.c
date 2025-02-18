@@ -99,6 +99,14 @@ AstNode* node_return(AstNode* expression) {
     return node;
 }
 
+AstNode* node_call(AstNode* function, AstNode** args, int arg_count) {
+    AstNode* node = new_node(Node_Call);
+    node->data.function_call.function = function;
+    node->data.function_call.args = args;
+    node->data.function_call.arg_count = arg_count;
+    return node;
+}
+
 char* node_type_to_str(NodeType type) {
     static char* strings[] = {
         "Node_None",
@@ -241,6 +249,12 @@ void print_ast(AstNode* node, size_t depth) {
             printf("Return:\n");
             print_ast(node->data.return_statement.val, depth + 1);
             break;
+        case Node_Call:
+            printf("Function Call:\n");
+            for (int i = 0; i < depth + 1; i++) { printf("  "); }
+            printf("Function -> %s\n", node->data.function_call.function->data.function.name);
+            for (int i = 0; i < depth + 1; i++) { printf("  "); }
+
         default:
             printf("Unknown node type: %s\n", node_type_to_str(node->type));
     }

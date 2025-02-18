@@ -102,6 +102,10 @@ Token make_numeric(char** input) {
     while(is_digit(**input)) { (*input)++; }
     // check for decimals or range
     char peeked = peek_char(input);
+    // todo : this needs a fix
+    //      it should be peeking twice, as current
+    //      will be added to the token.
+    //      proper structure would be to peek and peek next
     if (**input == '.' && peeked == '.') { // range
         Token tok = make_token(input, start, Numeric);
         return tok;
@@ -119,7 +123,6 @@ Token make_numeric(char** input) {
 
 Token make_ident(char** input) {
     char* start = *input;
-    // todo : allow checking for keywords
     while(is_ident_char(**input)) { (*input)++; }
     TokenType type = get_ident_or_keyword(input, start);
     Token tok = make_token(input, start, type);

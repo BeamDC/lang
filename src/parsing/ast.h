@@ -17,7 +17,7 @@ typedef enum {
     Node_While,
     Node_For,
     Node_Function,
-    Node_Call,
+    Node_Call, // todo
     Node_Return,
     Node_Program_Root
 } NodeType;
@@ -25,7 +25,6 @@ typedef enum {
 
 typedef struct AstNode{
     NodeType type;
-    // Token token; // the token that matches to this node
 
     union {
         double number;
@@ -83,6 +82,12 @@ typedef struct AstNode{
         struct {
             struct AstNode* val;
         }return_statement;
+
+        struct {
+            struct AstNode* function;
+            struct AstNode** args;
+            int arg_count;
+        }function_call;
     } data;
 } AstNode;
 
@@ -102,5 +107,6 @@ AstNode* node_while_loop(AstNode* condition, AstNode** body);
 AstNode* node_for_loop(AstNode* iterator, AstNode* iterable, AstNode** body);
 AstNode* node_function(char* name, bool public, int param_count, AstNode** params, TokenType returns, AstNode** body);
 AstNode* node_return(AstNode* expression);
+AstNode* node_call(AstNode* function, AstNode** args, int arg_count);
 
 #endif //AST_H
